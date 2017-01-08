@@ -1,6 +1,6 @@
 require(neuralnet)
 
-NeuralNetworkFitting <- function(output, input, hidden.layers)
+NeuralNetworkFitting <- function(data, hidden.layers)
 {
   # Neural network fitting
   #
@@ -13,10 +13,100 @@ NeuralNetworkFitting <- function(output, input, hidden.layers)
   #   net: Fitted network
   #
   
-  data <- cbind(output, input)
-  formula <- as.formula(paste(colnames(output), " ~ ", 
-                           paste(colnames(input), collapse = " + ")))
+  formula <- as.formula(paste(colnames(data)[1], " ~ ", 
+                           paste(colnames(data)[-1], collapse = " + ")))
   
   net <- neuralnet(formula, data, hidden = hidden.layers)
   return (net)
+}
+
+SigmoidFunction <- function(data)
+{
+  # Computes sigmoid function
+  #
+  # Args:
+  #   data: Object or value to be computed
+  #
+  # Returns
+  #   data: Sigmoid of object/value 
+  #
+  
+  data <- 1 / (1 + exp(-data))
+  return (data)
+}
+
+NeuralPrediction <- function(weights.list, data)
+{
+  # Given the weights and the input, computes the neural network prediction
+  #
+  # Args:
+  #   weights.list: List of weights
+  #   data: Input data
+  #
+  # Return:
+  #   prediction: Neural network prediction
+  #
+  
+  layers <- length(weights.list)
+  prediction <- as.matrix(data)
+  for( i in 1:layers)
+  {
+    prediction <- cbind(rep(1, nrow(prediction)), prediction)
+    prediction <- SigmoidFunction( prediction %*% weights.list[[i]] )
+  }
+  return (prediction)
+}
+
+LogLoss <- function(y, y.predicted)
+{
+  # Computes the logarithm loss function
+  #
+  # Args:
+  #   y: Real values
+  #   y.predicted: Estimated values
+  #
+  # Returns:
+  #   loss: Log loss obtained
+  #
+  
+  loss <- sum( y * log(y.predicted) + ( 1 - y ) * log( 1 - y.predicted)) / (length(y))
+  return (loss)
+}
+
+NeuralNetworkAnalysis <- function(data.train, data.cv, limit.hidden, limit.per.hidden)
+{
+  # Function collects the Log Loss of neural networks fitted 
+  #
+  # Args: 
+  #   data.train: Two dimensional obect with y on the first column (used for training/fitting)
+  #   data.cv: Two dimensional obect with y on the first column (used for cross validation)
+  #   limit.hidden: Limit of hidden layers to test 
+  #   limit.per.hidden: Limit of nodes inside each hidden layer
+  #
+  # Returns:
+  #   collected.losses: Two dimensional object with log loss in sample and out of sample.
+  #
+  
+  collected.losses <- data.frame()
+  insert <- 1
+  per.hidden <- 1
+  for ( i in 1:limit.hidden)
+  {
+    for(j in 1:limit.per.hidden)
+    {
+      hidden <- rep(per.hidden, i)
+      network <- NeuralNetworkFitting(data.train, hidden)
+      collected.losses[insert, 1] <- i
+      collected.losses[insert, 2] <- j
+      collected.losses[insert, 3] <- LogLoss(data.train[ ,1],
+                                             NeuralPrediction(network$weights[[1]],
+                                                              data.train[ ,-1]))
+      if (!is.na(data.cv))
+        collected.losses[insert, 4] <- LogLoss(data.cv[ ,1],
+                                               NeuralPrediction(network$weights[[1]],
+                                                                data.cv[ ,-1]))
+      insert <- insert + 1
+    }
+  }
+  return (collected.losses)
 }

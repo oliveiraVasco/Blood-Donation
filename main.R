@@ -22,8 +22,12 @@ normalized.data <- Normalization(rbind(data.train, data.test))
 data.train <- normalized.data[1:nrow(data.train), ]
 data.test <- normalized.data[(nrow(data.train) + 1):nrow(normalized.data), ]
 
-rm(normalized.data)
+
+data.train <- cbind(donation, data.train)
+
+rm(donation, normalized.data)
 
 # Network Fitting -----------------------
 
-network <- NeuralNetworkFitting(donation, data.train, c(1))
+#network <- NeuralNetworkFitting(data.train, c(1))
+errors <- NeuralNetworkAnalysis(data.train, NA, 2, 2)
