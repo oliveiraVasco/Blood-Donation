@@ -102,10 +102,10 @@ NeuralNetworkAnalysis <- function(data.train, data.cv, limit.per.hidden, limit.h
       hidden.structure[i] <- hidden.structure[i] + 1
       print(hidden.structure)
       network <- NeuralNetworkFitting(data.train, hidden.structure)
+      collected.losses[insert, 1] <- i
+      collected.losses[insert, 2] <- j
       if (!is.null(network$weights))
       {
-        collected.losses[insert, 1] <- i
-        collected.losses[insert, 2] <- j
         collected.losses[insert, 3] <- LogLoss(data.train[ ,1],
                                                NeuralPrediction(network$weights[[1]],
                                                                 data.train[ ,-1]))
@@ -113,11 +113,14 @@ NeuralNetworkAnalysis <- function(data.train, data.cv, limit.per.hidden, limit.h
         collected.losses[insert, 4] <- LogLoss(data.cv[ ,1],
                                                NeuralPrediction(network$weights[[1]],
                                                                 data.cv[ ,-1]))
-        insert <- insert + 1
       }
       else
+      {
         print("No convergence")
-
+        collected.losses[insert, 3] <- 0
+        collected.losses[insert, 4] <- 0
+      }
+      insert <- insert + 1
     }
   }
   return (collected.losses)
@@ -145,10 +148,39 @@ RandomSampleNeuralNetworkAnalysis <- function(data, limit.per.hidden, limit.hidd
   #for ( i in 1:number.samples)
   output.list <- foreach (i = 1:number.samples, .combine = c) %dopar%
   {
+    source("random_sample.R")
+    source("neural_networks.R")
     random.indexes <- GenerateSample(nrow(data), train.percentage)
     data.train <- SegmentTrainingSample(data, random.indexes)
     data.cv <- SegmentCrossValidation(data, random.indexes)
     output.list[[i]] <- NeuralNetworkAnalysis(data.train, data.cv, limit.per.hidden, limit.hidden)
   }
   return (output.list)
+}
+
+ListAgregation <- function(error.list)
+{
+  # Aggregates the result of RandomSampleNeuralNetworkAnalysis computing the means of each sample
+  #
+  # Args:
+  #   error.list: List of combined dataframes obtained from RandomSampleNeuralNetworkAnalysis
+  #
+  # Returns:
+  #   aggregated: Information about nodes on the first two columns. Logloss of train and cross-validation respectively
+  #
+  
+  i <- 4
+  aggregated <- matrix(data = 0, nrow = length(error.list[[1]]), ncol = 4)
+  aggregated[ ,1] <- error.list[[1]]
+  aggregated[ ,2] <- error.list[[2]]
+  len.list <- length(error.list)
+  while(i <= len.list)
+  {
+    aggregated[ ,3] <- aggregated[ ,3] + error.list[[i-1]]
+    aggregated[ ,4] <- aggregated[ ,4] + error.list[[i]]
+    i <- i + 4
+  }
+  aggregated[ ,3] <- aggregated[ ,3] / (len.list/4)
+  aggregated[ ,4] <- aggregated[ ,4] / (len.list/4)
+  return (aggregated)
 }

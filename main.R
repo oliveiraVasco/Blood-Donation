@@ -27,19 +27,30 @@ data.train <- cbind(donation, data.train)
 
 rm(donation, normalized.data)
 
-# Simple segmentation -------------------
-#train.dimension.index <- nrow(data.train) - round(nrow(data.train) * 0.7)
-#data.cv <- data.train[1:train.dimension.index, ]
-#data.train <- data.train[(train.dimension.index + 1):nrow(data.train), ]
 
-# Network Fitting -----------------------
+# Network random sample analysis -----------------------
 
-#network <- NeuralNetworkFitting(data.train, c(1))
+limit.per.hidden = 4
+limit.hidden = 5
+number.samples = 5
+train.percentage = 0.7
+number.cores = 4
 
-#errors <- NeuralNetworkAnalysis(data.train, data.cv, 6, 3)
+errors.list <- RandomSampleNeuralNetworkAnalysis(data.train, limit.per.hidden, 
+                                                 limit.hidden, number.samples, 
+                                                 train.percentage, number.cores)
 
-errors.list <- RandomSampleNeuralNetworkAnalysis(data.train, 2, 2, 2, 0.7, 2)
+# Result aggregation ----------------------
 
-plot(errors[ ,3], ylim = range(c(errors[ ,3], errors[ ,4])))
+aggregated <- ListAgregation(errors.list)
+
+# Result plotting -------------------------
+
+plot(aggregated[ ,3], ylim = range(c(aggregated[ ,3], aggregated[ ,4])),
+     xlab = "Total_Nodes", ylab = "Log_Loss")
 par(new = TRUE)
-plot(errors[ ,4], col = "blue", ylim = range(c(errors[ ,3], errors[ ,4])))
+plot(aggregated[ ,4], col = "blue", ylim = range(c(aggregated[ ,3], aggregated[ ,4])),
+     xlab = "Total_Nodes", ylab = "Log_Loss")
+
+
+
