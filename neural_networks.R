@@ -1,4 +1,7 @@
 require(neuralnet)
+source("random_sample.R")
+
+require(doParallel)
 
 NeuralNetworkFitting <- function(data, hidden.layers)
 {
@@ -118,4 +121,34 @@ NeuralNetworkAnalysis <- function(data.train, data.cv, limit.per.hidden, limit.h
     }
   }
   return (collected.losses)
+}
+
+RandomSampleNeuralNetworkAnalysis <- function(data, limit.per.hidden, limit.hidden, number.samples, train.percentage, number.cores)
+{
+  # Generates random samples and performs NeuralNetworkAnalysis
+  #
+  # Args:
+  #   data: Two dimensional object to be segmented in train and cross validation
+  #   limit.per.hidden: Limit of nodes inside each hidden layer
+  #   limit.hidden: Limit of hidden layers to test 
+  #   number.samples: Number of samples to generate
+  #   train.percentage: Percentage of data for train (from 0 to 1)
+  #
+  # Returns:
+  #   output.list: List of dataframes with each sample result
+  #
+  
+  registerDoParallel(cores = number.cores)
+  options(cores = number.cores) 
+  
+  output.list <- list()
+  #for ( i in 1:number.samples)
+  output.list <- foreach (i = 1:number.samples, .combine = c) %dopar%
+  {
+    random.indexes <- GenerateSample(nrow(data), train.percentage)
+    data.train <- SegmentTrainingSample(data, random.indexes)
+    data.cv <- SegmentCrossValidation(data, random.indexes)
+    output.list[[i]] <- NeuralNetworkAnalysis(data.train, data.cv, limit.per.hidden, limit.hidden)
+  }
+  return (output.list)
 }
