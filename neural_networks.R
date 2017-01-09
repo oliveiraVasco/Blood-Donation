@@ -1,6 +1,5 @@
 require(neuralnet)
 source("random_sample.R")
-
 require(doParallel)
 
 NeuralNetworkFitting <- function(data, hidden.layers)
@@ -109,7 +108,6 @@ NeuralNetworkAnalysis <- function(data.train, data.cv, limit.per.hidden, limit.h
         collected.losses[insert, 3] <- LogLoss(data.train[ ,1],
                                                NeuralPrediction(network$weights[[1]],
                                                                 data.train[ ,-1]))
-        #if (!is.na(data.cv))
         collected.losses[insert, 4] <- LogLoss(data.cv[ ,1],
                                                NeuralPrediction(network$weights[[1]],
                                                                 data.cv[ ,-1]))
@@ -117,8 +115,8 @@ NeuralNetworkAnalysis <- function(data.train, data.cv, limit.per.hidden, limit.h
       else
       {
         print("No convergence")
-        collected.losses[insert, 3] <- 0
-        collected.losses[insert, 4] <- 0
+        collected.losses[insert, 3] <- NA
+        collected.losses[insert, 4] <- NA
       }
       insert <- insert + 1
     }
@@ -148,8 +146,8 @@ RandomSampleNeuralNetworkAnalysis <- function(data, limit.per.hidden, limit.hidd
   #for ( i in 1:number.samples)
   output.list <- foreach (i = 1:number.samples, .combine = c) %dopar%
   {
-    source("random_sample.R")
-    source("neural_networks.R")
+    #source("random_sample.R")
+    #source("neural_networks.R")
     random.indexes <- GenerateSample(nrow(data), train.percentage)
     data.train <- SegmentTrainingSample(data, random.indexes)
     data.cv <- SegmentCrossValidation(data, random.indexes)
