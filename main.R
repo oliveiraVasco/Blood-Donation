@@ -27,7 +27,17 @@ data.train <- cbind(donation, data.train)
 
 rm(donation, normalized.data)
 
+# Simple segmentation -------------------
+train.dimension.index <- nrow(data.train) - round(nrow(data.train) * 0.7)
+data.cv <- data.train[1:train.dimension.index, ]
+data.train <- data.train[(train.dimension.index + 1):nrow(data.train), ]
+
 # Network Fitting -----------------------
 
 #network <- NeuralNetworkFitting(data.train, c(1))
-errors <- NeuralNetworkAnalysis(data.train, NA, 2, 2)
+
+errors <- NeuralNetworkAnalysis(data.train, data.cv, 6, 3)
+
+plot(errors[ ,3], ylim = range(c(errors[ ,3], errors[ ,4])))
+par(new = TRUE)
+plot(errors[ ,4], col = "blue", ylim = range(c(errors[ ,3], errors[ ,4])))
